@@ -2,11 +2,12 @@
 
 import ConfigParser
 import logging
-import psutil
 
+from monasca_agent.common import psutil_compat
 import monasca_setup.agent_config
 from monasca_setup.detection import Plugin
 from monasca_setup.detection.utils import find_process_name
+
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class VCenter(Plugin):
 
     def get_nova_config_file(self):
         nova_conf = None
-        for proc in psutil.process_iter():
+        for proc in psutil_compat.process_iter():
             try:
                 cmd = proc.cmdline()
                 if len(cmd) > 2 and 'python' in cmd[0] and 'nova-compute' in cmd[1]:

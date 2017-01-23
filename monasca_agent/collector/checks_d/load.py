@@ -1,12 +1,12 @@
 # (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
 
 import logging
-import psutil
 import re
 import subprocess
 import sys
 
 import monasca_agent.collector.checks as checks
+from monasca_agent.common import psutil_compat
 import monasca_agent.common.util as util
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class Load(checks.AgentCheck):
         # so the metric is useful for alarming across
         # hosts with varying core numbers
         #
-        num_cores = psutil.cpu_count(logical=True)
+        num_cores = psutil_compat.cpu_count(logical=True)
 
         self.gauge('load.avg_1_min',
                    round((float(load[0]) / num_cores), 3),

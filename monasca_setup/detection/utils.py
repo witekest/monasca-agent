@@ -10,6 +10,7 @@ from subprocess import Popen
 
 import psutil
 
+from monasca_agent.common import psutil_compat
 from monasca_setup import agent_config
 
 log = logging.getLogger(__name__)
@@ -35,12 +36,14 @@ except AttributeError:
 
 
 def find_process_cmdline(search_string):
-    """Simple function to search running process for one with cmdline containing.
+    """Simple function to search running process for one with cmdline
+    containing search_string.
     """
-    for process in psutil.process_iter():
+    for process in psutil_compat.process_iter():
         try:
-            if (search_string in ' '.join(process.cmdline()) and
-               'monasca-setup' not in ' '.join(process.cmdline())):
+            process_cmdline = ' '.join(process.cmdline())
+            if (search_string in process_cmdline and
+               'monasca-setup' not in process_cmdline):
                 return process
         except psutil.NoSuchProcess:
             continue
@@ -51,7 +54,7 @@ def find_process_cmdline(search_string):
 def find_process_name(pname):
     """Simple function to search running process for one with pname.
     """
-    for process in psutil.process_iter():
+    for process in psutil_compat.process_iter():
         try:
             if pname == process.name():
                 return process
@@ -73,11 +76,23 @@ def find_process_service(sname):
     return False
 
 
-def find_addr_listening_on_port(port):
+def find_addrs_listening_on_port(port, kind='inet'):
+    """Return the list of IP addresses which are listening
+    on the specified port.
+    """
+    listening = []
+    for connection in psutil_compat.net_connections(kind):
+        if (connection.status == psutil.CONN_LISTEN
+                and connection.laddr[1] == int(port)):
+            listening.append(connection.laddr[0])
+    return listening
+
+
+def find_addr_listening_on_port_over_tcp(port):
     """Return the IP address which is listening on the specified TCP port."""
-    for conn in psutil.net_connections(kind='tcp'):
-        if conn.laddr[1] == port and conn.status == psutil.CONN_LISTEN:
-            return conn.laddr[0].lstrip("::ffff:")
+    ip = find_addrs_listening_on_port(port, 'tcp')
+    if ip:
+        return ip[0].lstrip("::ffff:")
 
 
 def watch_process(search_strings, service=None, component=None,

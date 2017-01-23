@@ -3,7 +3,7 @@
 """Code to handle various service managers used on different OS
 
 """
-import psutil
+from monasca_agent.common import psutil_compat
 
 
 class Service(object):
@@ -11,7 +11,8 @@ class Service(object):
 
     """
 
-    def __init__(self, prefix_dir, config_dir, log_dir, template_dir, name='monasca-agent', username='monasca-agent'):
+    def __init__(self, prefix_dir, config_dir, log_dir, template_dir,
+                 name='monasca-agent', username='monasca-agent'):
         self.prefix_dir = prefix_dir
         self.config_dir = config_dir
         self.log_dir = log_dir
@@ -50,8 +51,9 @@ class Service(object):
 
         """
         # Looking for the supervisor process not the individual components
-        for process in psutil.process_iter():
-            if '{0}/supervisor.conf'.format(self.config_dir) in process.cmdline():
+        for process in psutil_compat.process_iter():
+            if ('{0}/supervisor.conf'.format(self.config_dir)
+                    in process.cmdline()):
                 return True
 
         return False

@@ -1,11 +1,11 @@
 # (C) Copyright 2015-2016 Hewlett Packard Enterprise Development Company LP
 
 import logging
-import psutil
 import re
 import subprocess
 
 import monasca_agent.collector.checks as checks
+from monasca_agent.common import psutil_compat
 
 log = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class Cpu(checks.AgentCheck):
         # __init__ because the first time these two functions are called with
         # interval = 0.0 or None, it will return a meaningless 0.0 value
         # which you are supposed to ignore.
-        psutil.cpu_percent(interval=None, percpu=False)
-        psutil.cpu_times_percent(interval=None, percpu=False)
+        psutil_compat.cpu_percent(interval=None, percpu=False)
+        psutil_compat.cpu_times_percent(interval=None, percpu=False)
 
     def check(self, instance):
         """Capture cpu stats
@@ -32,9 +32,9 @@ class Cpu(checks.AgentCheck):
         else:
             send_rollup_stats = False
 
-        cpu_stats = psutil.cpu_times_percent(interval=None, percpu=False)
-        cpu_times = psutil.cpu_times(percpu=False)
-        cpu_perc = psutil.cpu_percent(interval=None, percpu=False)
+        cpu_stats = psutil_compat.cpu_times_percent(interval=None, percpu=False)
+        cpu_times = psutil_compat.cpu_times(percpu=False)
+        cpu_perc = psutil_compat.cpu_percent(interval=None, percpu=False)
 
         data = {'cpu.user_perc': cpu_stats.user + cpu_stats.nice,
                 'cpu.system_perc': cpu_stats.system + cpu_stats.irq + cpu_stats.softirq,
@@ -57,7 +57,8 @@ class Cpu(checks.AgentCheck):
             num_of_metrics += 1
 
         if send_rollup_stats:
-            self.gauge('cpu.total_logical_cores', psutil.cpu_count(logical=True), dimensions)
+            self.gauge('cpu.total_logical_cores',
+                       psutil_compat.cpu_count(logical=True), dimensions)
             num_of_metrics += 1
         log.debug('Collected {0} cpu metrics'.format(num_of_metrics))
 
